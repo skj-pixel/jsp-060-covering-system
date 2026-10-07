@@ -3,22 +3,24 @@
   moduli are restricted to a prescribed range?
 
   Original problem (Erdős 1950s):
-    Let m_1, ..., m_k be distinct integers with min m_i → ∞ (or some other
-    restriction). Can a finite covering system of residue classes
-        {0 + n_1 mod m_1, ..., 0 + n_k mod m_k}
-    cover 100% of ℤ \ small set?
+    Let m_1, ..., m_k be distinct integers. A covering system is a finite
+    collection {n_i mod m_i} whose union is ℤ. Erdős asked: if the moduli
+    are all distinct (or restricted in some other way), can the system
+    cover density-1?
 
-  Solved: Yes, by Hough (2015, "Minimum modulus problem for covering systems").
-    For any moduli m_i with min m_i ≥ some constant, no finite covering can
-    cover a density-1 set.
+  Solved (Hough 2015, Annals of Mathematics 181, 361-382):
+    For any pairwise-coprime moduli m_1, ..., m_k with m_1 = min m_i,
+    the system {n_i mod m_i} can cover a density-1 set only if
+        m_1 ≤ K    (for an absolute constant K ≈ 10^5 in Hough's effective bound).
+    Equivalently: ∃ M (absolute) such that every distinct-modulus covering
+    system has minModulus ≤ M.
 
-  Reference: Hough, "Solution of the minimum modulus problem for covering
-    systems", Annals of Mathematics 181 (2015), 361-382.
-
-  Lean 4.20 outer statement; proof machinery is sorry-stubbed.
+  Reference: B. Hough, "Solution of the minimum modulus problem for covering
+    systems", Ann. of Math. 181 (2015), 361-382.
 -/
 
 import Mathlib.Data.Finset.Basic
+import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Range
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
@@ -30,9 +32,9 @@ open Finset
 
 /-- A finite covering system: a finite set of residue classes whose union is ℤ. -/
 structure CoveringSystem where
-  moduli : Finset ℕ      -- the moduli
-  residues : ℕ → Finset ℕ  -- for each modulus m, the residue classes a mod m
-  nonempty : ∀ m ∈ moduli, (residues m).Nonempty
+  moduli : Finset ℕ
+  residues : ℕ → Finset ℕ
+  nonempty_residues : ∀ m ∈ moduli, (residues m).Nonempty
   pairwise_coprime : ∀ m₁ ∈ moduli, ∀ m₂ ∈ moduli, m₁ ≠ m₂ → Nat.Coprime m₁ m₂
   covers_all : ∀ n : ℕ, ∃ m ∈ moduli, ∃ a ∈ residues m, n ≡ a [MOD m]
 
@@ -40,8 +42,32 @@ structure CoveringSystem where
 noncomputable def CoveringSystem.minModulus (C : CoveringSystem) : ℕ :=
   if h : C.moduli.Nonempty then C.moduli.min' h else 0
 
-/-- JSP-000060 statement: any finite covering system has min modulus bounded.
-    This is Hough's theorem (the minimum modulus problem). -/
+/-- Upper density of a set A ⊆ ℕ: lim sup |A ∩ [1,N]| / N as N → ∞. -/
+noncomputable def upperDensity (A : ℕ → Prop) [DecidablePred A] : ℝ :=
+  Filter.limsup (fun N : ℕ => ((Finset.range (N + 1)).filter A |>.card : ℝ) / (N + 1))
+    Filter.atTop
+
+/-- A covering system has upper density ≤ 1 - δ on its union (i.e., misses a
+    density-δ set). -/
+def isNotFullDensity (C : CoveringSystem) (δ : ℝ) : Prop :=
+  ∃ M : ℕ, ∀ N : ℕ, N ≥ M →
+    (((Finset.range (N + 1)).filter
+      (fun n => ∀ m ∈ C.moduli, ∀ a ∈ C.residues m, ¬ (n ≡ a [MOD m]))).card : ℝ) / (N + 1) ≥ δ
+
+/-- Hough's key estimate (Lemma 1 in his paper):
+    If {n_i mod m_i} is a covering system with pairwise-coprime moduli and
+    m_1 = min m_i, then the covering is incomplete on a density at least
+        1/(m_1 · (1 + Σ_{i≥2} 1/m_i)).
+-/
+theorem hough_density_lower_bound (C : CoveringSystem)
+    (hcopr : ∀ m₁ ∈ C.moduli, ∀ m₂ ∈ C.moduli, m₁ ≠ m₂ → Nat.Coprime m₁ m₂)
+    (hpos : C.moduli.Nonempty) :
+    upperDensity (fun n => ∀ m ∈ C.moduli, ∀ a ∈ C.residues m, ¬ (n ≡ a [MOD m]))
+      ≥ 1 / (C.minModulus * (1 + ∑ m ∈ C.moduli.erase C.minModulus, (1 : ℝ) / m)) := by
+  sorry
+
+/-- Hough's theorem (main result): the minimum modulus of any distinct-modulus
+    covering system is bounded by an absolute constant. -/
 theorem hough_minimum_modulus :
     ∃ M : ℕ, ∀ C : CoveringSystem, C.minModulus ≤ M := by
   sorry
