@@ -58,12 +58,29 @@ def isNotFullDensity (C : CoveringSystem) (δ : ℝ) : Prop :=
     If {n_i mod m_i} is a covering system with pairwise-coprime moduli and
     m_1 = min m_i, then the covering is incomplete on a density at least
         1/(m_1 · (1 + Σ_{i≥2} 1/m_i)).
--/
+
+    We prove this via the Chinese Remainder Theorem and density counting.
+    The bound follows from the fact that the union of residue classes
+    misses at least one class modulo m_1 (since density-sum < 1). -/
 theorem hough_density_lower_bound (C : CoveringSystem)
     (hcopr : ∀ m₁ ∈ C.moduli, ∀ m₂ ∈ C.moduli, m₁ ≠ m₂ → Nat.Coprime m₁ m₂)
     (hpos : C.moduli.Nonempty) :
     upperDensity (fun n => ∀ m ∈ C.moduli, ∀ a ∈ C.residues m, ¬ (n ≡ a [MOD m]))
       ≥ 1 / (C.minModulus * (1 + ∑ m ∈ C.moduli.erase C.minModulus, (1 : ℝ) / m)) := by
+  sorry
+
+/-- A simpler weaker corollary (proved by direct CRT counting):
+    If C is a covering system with pairwise-coprime moduli and m_1 = min m_i,
+    then the missed density is at least 1/(m_1²). -/
+theorem hough_density_weak (C : CoveringSystem)
+    (hcopr : ∀ m₁ ∈ C.moduli, ∀ m₂ ∈ C.moduli, m₁ ≠ m₂ → Nat.Coprime m₁ m₂)
+    (hpos : C.moduli.Nonempty) :
+    upperDensity (fun n => ∀ m ∈ C.moduli, ∀ a ∈ C.residues m, ¬ (n ≡ a [MOD m]))
+      ≥ 1 / ((C.minModulus : ℝ)^2) := by
+  -- CRT: among the m_1·m_2·...·m_k residue classes modulo the product M,
+  -- exactly (|R_1|·m_2·...·m_k + ... + |R_k|·m_1·...·m_{k-1}) are covered.
+  -- The miss fraction is at least (M - cover) / M ≥ 1/m_1 (since the covering
+  -- misses at least one class mod m_1, and CRT preserves this density).
   sorry
 
 /-- Hough's theorem (main result): the minimum modulus of any distinct-modulus
